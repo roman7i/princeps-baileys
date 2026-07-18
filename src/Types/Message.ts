@@ -85,14 +85,7 @@ export type MessageWithContextInfo =
 export type DownloadableMessage = { mediaKey?: Uint8Array | null; directPath?: string | null; url?: string | null }
 
 export type MessageReceiptType =
-	| 'read'
-	| 'read-self'
-	| 'hist_sync'
-	| 'peer_msg'
-	| 'sender'
-	| 'inactive'
-	| 'played'
-	| undefined
+	'read' | 'read-self' | 'hist_sync' | 'peer_msg' | 'sender' | 'inactive' | 'played' | undefined
 
 export type MediaConnInfo = {
 	auth: string
@@ -217,6 +210,57 @@ export type ButtonReplyInfo = {
 	index: number
 }
 
+export type NativeFlowQuickReplyParams = {
+	display_text: string
+	id: string
+	disabled?: boolean
+}
+
+export type NativeFlowSingleSelectRow = {
+	title: string
+	/** Row identifier written into buttonParamsJson as `id` */
+	id: string
+	description?: string
+	header?: string
+}
+
+export type NativeFlowSingleSelectSection = {
+	title: string
+	rows: NativeFlowSingleSelectRow[]
+}
+
+export type NativeFlowSingleSelectParams = {
+	title: string
+	sections: NativeFlowSingleSelectSection[]
+	/** Label on the list open button */
+	button?: string
+}
+
+export type NativeFlowSendableButton =
+	| { name: 'quick_reply'; buttonParams: NativeFlowQuickReplyParams }
+	| { name: 'single_select'; buttonParams: NativeFlowSingleSelectParams }
+
+export type NativeFlowMessageContent = {
+	text: string
+	footer?: string
+	/** Optional interactive header title */
+	title?: string
+	nativeFlowButtons: NativeFlowSendableButton[]
+} & Mentionable &
+	Contextable &
+	Editable
+
+export type NativeFlowResponseInfo = {
+	name: string
+	id?: string
+	displayText?: string
+	/** Parsed paramsJson object */
+	params: Record<string, unknown>
+	/** Raw paramsJson string from the wire */
+	paramsJson?: string
+	version?: number
+}
+
 export type GroupInviteInfo = {
 	inviteCode: string
 	inviteExpiration: number
@@ -230,6 +274,7 @@ export type WASendableProduct = Omit<proto.Message.ProductMessage.IProductSnapsh
 }
 
 export type AnyRegularMessageContent = (
+	| NativeFlowMessageContent
 	| ({
 			text: string
 			linkPreview?: WAUrlInfo | null

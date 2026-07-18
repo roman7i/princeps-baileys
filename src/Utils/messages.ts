@@ -40,6 +40,7 @@ import {
 	getRawMediaUploadData,
 	type MediaDownloadOptions
 } from './messages-media'
+import { buildNativeFlowButtons } from './native-flow'
 import { shouldIncludeReportingToken } from './reporting-utils'
 
 type ExtractByKey<T, K extends PropertyKey> = T extends Record<K, any> ? T : never
@@ -397,7 +398,30 @@ export const generateWAMessageContent = async (
 	options: MessageContentGenerationOptions
 ) => {
 	let m: WAMessageContent = {}
-	if (hasNonNullishProperty(message, 'text')) {
+	if (hasNonNullishProperty(message, 'nativeFlowButtons')) {
+		if (!message.nativeFlowButtons.length) {
+			throw new Boom('nativeFlowButtons requires at least one button', { statusCode: 400 })
+		}
+
+		m.interactiveMessage = {
+			body: { text: message.text },
+			nativeFlowMessage: {
+				messageVersion: 1,
+				buttons: buildNativeFlowButtons(message.nativeFlowButtons)
+			}
+		}
+
+		if (message.footer) {
+			m.interactiveMessage.footer = { text: message.footer }
+		}
+
+		if (message.title) {
+			m.interactiveMessage.header = {
+				title: message.title,
+				hasMediaAttachment: false
+			}
+		}
+	} else if (hasNonNullishProperty(message, 'text')) {
 		const extContent = { text: message.text } as WATextMessage
 
 		let urlInfo = message.linkPreview

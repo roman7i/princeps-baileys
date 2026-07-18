@@ -1208,6 +1208,8 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 			return 'product'
 		} else if (message.interactiveResponseMessage) {
 			return 'native_flow_response'
+		} else if (message.interactiveMessage) {
+			return 'native_flow'
 		} else if (message.groupInviteMessage) {
 			return 'url'
 		}
@@ -1369,6 +1371,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 				const isEditMsg = 'edit' in content && !!content.edit
 				const isPinMsg = 'pin' in content && !!content.pin
 				const isPollMessage = 'poll' in content && !!content.poll
+				const isNativeFlowMsg = 'nativeFlowButtons' in content && !!content.nativeFlowButtons?.length
 				const additionalAttributes: BinaryNodeAttributes = {}
 				const additionalNodes: BinaryNode[] = []
 				// required for delete
@@ -1396,6 +1399,29 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 						attrs: {
 							event_type: 'creation'
 						}
+					} as BinaryNode)
+				} else if (isNativeFlowMsg) {
+					additionalNodes.push({
+						tag: 'biz',
+						attrs: {},
+						content: [
+							{
+								tag: 'interactive',
+								attrs: {
+									type: 'native_flow',
+									v: '1'
+								},
+								content: [
+									{
+										tag: 'native_flow',
+										attrs: {
+											v: '9',
+											name: 'mixed'
+										}
+									}
+								]
+							}
+						]
 					} as BinaryNode)
 				}
 

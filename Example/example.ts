@@ -1,7 +1,7 @@
 import { Boom } from '@hapi/boom'
 import NodeCache from '@cacheable/node-cache'
 import readline from 'readline'
-import makeWASocket, { CacheStore, DEFAULT_CONNECTION_CONFIG, DisconnectReason, fetchLatestBaileysVersion, generateMessageIDV2, getAggregateVotesInPollMessage, isJidNewsletter, makeCacheableSignalKeyStore, proto, useMultiFileAuthState, WAMessageContent, WAMessageKey } from '../src'
+import makeWASocket, { CacheStore, DEFAULT_CONNECTION_CONFIG, DisconnectReason, fetchLatestBaileysVersion, generateMessageIDV2, getAggregateVotesInPollMessage, isJidNewsletter, makeCacheableSignalKeyStore, parseNativeFlowResponse, proto, useMultiFileAuthState, WAMessageContent, WAMessageKey } from '../src'
 import P from 'pino'
 
 const logger = P({
@@ -137,6 +137,11 @@ const startSock = async() => {
 
         if (upsert.type === 'notify') {
           for (const msg of upsert.messages) {
+            const nativeFlowReply = parseNativeFlowResponse(msg)
+            if (nativeFlowReply) {
+              logger.debug(nativeFlowReply, 'native flow response received')
+            }
+
             if (msg.message?.conversation || msg.message?.extendedTextMessage?.text) {
               const text = msg.message?.conversation || msg.message?.extendedTextMessage?.text
               if (text == "requestPlaceholder" && !upsert.requestId) {
@@ -148,6 +153,35 @@ const startSock = async() => {
               if (text == "onDemandHistSync") {
                 const messageId = await sock.fetchMessageHistory(50, msg.key, msg.messageTimestamp!)
                 logger.debug({ id: messageId }, 'requested on-demand history resync')
+              }
+
+              // demo: send native-flow quick_reply + single_select menu
+              if (text == "nativeFlow" && !msg.key.fromMe) {
+                await sock.sendMessage(msg.key.remoteJid!, {
+                  text: 'Choose an option',
+                  footer: 'Native Flow demo',
+                  title: 'Menu',
+                  nativeFlowButtons: [
+                    { name: 'quick_reply', buttonParams: { display_text: 'Yes', id: 'yes' } },
+                    { name: 'quick_reply', buttonParams: { display_text: 'No', id: 'no' } },
+                    {
+                      name: 'single_select',
+                      buttonParams: {
+                        title: 'More options',
+                        button: 'Open',
+                        sections: [
+                          {
+                            title: 'Section A',
+                            rows: [
+                              { title: 'Option 1', id: 'opt1', description: 'First choice' },
+                              { title: 'Option 2', id: 'opt2', description: 'Second choice' }
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                })
               }
 
               if (!msg.key.fromMe && doReplies && !isJidNewsletter(msg.key?.remoteJid!)) {
