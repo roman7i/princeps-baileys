@@ -403,39 +403,23 @@ export const generateWAMessageContent = async (
 			throw new Boom('nativeFlowButtons requires at least one button', { statusCode: 400 })
 		}
 
-		// Cross-platform native flow (Android / iOS / WA Business):
-		// interactiveMessage + messageParamsJson, wrapped as future-proof viewOnce.
-		const interactiveMessage: proto.Message.IInteractiveMessage = {
+		// Match working WA client payloads (baileys_helpers / itsukichan-style):
+		// top-level interactiveMessage + nativeFlowMessage — no viewOnce, no fake templateId.
+		m.interactiveMessage = {
 			body: { text: message.text },
 			nativeFlowMessage: {
-				messageVersion: 1,
-				messageParamsJson: JSON.stringify({
-					from: 'api',
-					templateId: '4194010172545670'
-				}),
 				buttons: buildNativeFlowButtons(message.nativeFlowButtons)
 			}
 		}
 
 		if (message.footer) {
-			interactiveMessage.footer = { text: message.footer }
+			m.interactiveMessage.footer = { text: message.footer }
 		}
 
-		interactiveMessage.header = {
-			title: message.title || '',
-			subtitle: '',
-			hasMediaAttachment: false
-		}
-
-		m = {
-			viewOnceMessage: {
-				message: {
-					messageContextInfo: {
-						deviceListMetadata: {},
-						deviceListMetadataVersion: 2
-					},
-					interactiveMessage
-				}
+		if (message.title) {
+			m.interactiveMessage.header = {
+				title: message.title,
+				hasMediaAttachment: false
 			}
 		}
 	} else if (hasNonNullishProperty(message, 'text')) {
