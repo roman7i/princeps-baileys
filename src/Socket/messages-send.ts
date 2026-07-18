@@ -1401,6 +1401,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 						}
 					} as BinaryNode)
 				} else if (isNativeFlowMsg) {
+					// biz/interactive nodes required for native flow rendering
 					additionalNodes.push({
 						tag: 'biz',
 						attrs: {},
@@ -1422,6 +1423,13 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 								]
 							}
 						]
+					} as BinaryNode)
+					// bot capability flag — needed for Android / iOS / WA Business clients
+					additionalNodes.push({
+						tag: 'bot',
+						attrs: {
+							biz_bot: '1'
+						}
 					} as BinaryNode)
 				}
 

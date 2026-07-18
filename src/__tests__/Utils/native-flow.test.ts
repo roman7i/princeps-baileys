@@ -82,12 +82,18 @@ describe('generateWAMessageContent native flow', () => {
 			generationOptions
 		)
 
-		expect(content.interactiveMessage?.body?.text).toBe('Choose')
-		expect(content.interactiveMessage?.footer?.text).toBe('Footer')
-		expect(content.interactiveMessage?.header?.title).toBe('Header')
-		expect(content.interactiveMessage?.nativeFlowMessage?.messageVersion).toBe(1)
-		expect(content.interactiveMessage?.nativeFlowMessage?.buttons).toHaveLength(1)
-		expect(content.interactiveMessage?.nativeFlowMessage?.buttons?.[0]?.name).toBe('quick_reply')
+		// Cross-platform envelope: viewOnceMessage -> interactiveMessage
+		const interactive = content.viewOnceMessage?.message?.interactiveMessage
+		expect(interactive?.body?.text).toBe('Choose')
+		expect(interactive?.footer?.text).toBe('Footer')
+		expect(interactive?.header?.title).toBe('Header')
+		expect(interactive?.nativeFlowMessage?.messageVersion).toBe(1)
+		expect(interactive?.nativeFlowMessage?.messageParamsJson).toContain('from')
+		expect(interactive?.nativeFlowMessage?.buttons).toHaveLength(1)
+		expect(interactive?.nativeFlowMessage?.buttons?.[0]?.name).toBe('quick_reply')
+		expect(content.viewOnceMessage?.message?.messageContextInfo?.deviceListMetadataVersion).toBe(2)
+		expect(content.listMessage).toBeFalsy()
+		expect(content.buttonsMessage).toBeFalsy()
 	})
 
 	it('rejects an empty nativeFlowButtons array', async () => {
